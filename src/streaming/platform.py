@@ -74,9 +74,11 @@ class StreamingPlatform:
         """
         Return the total cumulative listening time (in minutes) across all users for a given time period. Sum up the listening duration for all sessions that fall within the specified datetime window (inclusive on both ends).
         """
-        start_time, end_time = start.now(UTC), end.now(UTC)
+        #start_time, end_time = start.now(UTC), end.now(UTC)
+        # assert [[s.duration_listened_seconds for s in u.sessions if start_time <= s.timestamp.now(UTC) <= end_time]
+        #      for u in self._users.values()] == 1
         return sum(
-            [sum([s.duration_listened_seconds for s in u.sessions if start_time <= s.timestamp.now(UTC) <= end_time])
+            [sum([s.duration_listened_seconds for s in u.sessions if start <= s.timestamp <= end])
              for u in self._users.values()]) / 60.0
 
     def avg_unique_tracks_per_premium_user(self, days: int = 30) -> float:
