@@ -191,42 +191,44 @@ pytest -x
 Each file in `src/streaming/` contains a docstring specifying which classes must be implemented.
 
 ### tracks.py
-- [ ] `Track` - Abstract base class for all playable content
-- [ ] `Song` - Music track associated with an artist
-- [ ] `SingleRelease` - Song released as standalone single
-- [ ] `AlbumTrack` - Song that is part of an album
-- [ ] `Podcast` - Podcast episode
-- [ ] `InterviewEpisode` - Interview-format podcast
-- [ ] `NarrativeEpisode` - Narrative-format podcast
-- [ ] `AudiobookTrack` - Chapter/section from an audiobook
+- [X] `Track` - Abstract base class for all playable content
+- [X] `Song` - Music track associated with an artist
+- [X] `SingleRelease` - Song released as standalone single
+- [X] `AlbumTrack` - Song that is part of an album
+- [X] `Podcast` - Podcast episode
+- [X] `InterviewEpisode` - Interview-format podcast
+- [X] `NarrativeEpisode` - Narrative-format podcast
+- [X] `AudiobookTrack` - Chapter/section from an audiobook
 
 ### users.py
-- [ ] `User` - Base class for all users
-- [ ] `FreeUser` - Free tier user with limited features
-- [ ] `PremiumUser` - Paid subscriber with full access
-- [ ] `FamilyAccountUser` - Premium user managing family account
-- [ ] `FamilyMember` - User profile belonging to a family account
+- [X] `User` - Base class for all users
+- [X] `FreeUser` - Free tier user with limited features
+- [X] `PremiumUser` - Paid subscriber with full access
+- [X] `FamilyAccountUser` - Premium user managing family account
+- [X] `FamilyMember` - User profile belonging to a family account
 
 ### artists.py
-- [ ] `Artist` - Music artist or content creator
+- [X] `Artist` - Music artist or content creator
 
 ### albums.py
-- [ ] `Album` - Ordered collection of AlbumTrack objects
+- [X] `Album` - Ordered collection of AlbumTrack objects
 
 ### playlists.py
-- [ ] `Playlist` - User-curated ordered collection of tracks
-- [ ] `CollaborativePlaylist` - Playlist with multiple contributors
+- [X] `Playlist` - User-curated ordered collection of tracks
+- [X] `CollaborativePlaylist` - Playlist with multiple contributors
 
 ### sessions.py
-- [ ] `ListeningSession` - Records a user listening to a track
+- [X] `ListeningSession` - Records a user listening to a track
 
 ### platform.py
-- [ ] `StreamingPlatform` - Central platform orchestrating all entities
+- [X] `StreamingPlatform` - Central platform orchestrating all entities
   - Registration methods: `add_track()`, `add_user()`, `add_artist()`, `add_album()`, `add_playlist()`, `record_session()`
   - Accessors: `get_track()`, `get_user()`, `get_artist()`, `get_album()`, `all_users()`, `all_tracks()`
   - **10 Query Methods** (Q1-Q10) - See section below
 
+# todo
 
+- [ ] write more tests as required
 
 ## 📚 Hints & Tips
 
