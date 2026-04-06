@@ -51,6 +51,7 @@ class StreamingPlatform:
 
     def record_session(self, session):
         self._sessions.append(session)
+        self._users.get(session.user.user_id).add_session(session)
 
     def get_track(self, track_id) -> Track | None:
         return self._catalogue.get(track_id)
@@ -89,11 +90,11 @@ class StreamingPlatform:
         if len(premiums) == 0:
             return 0.0
 
-        d_limit = datetime.now(UTC) - timedelta(days)
+        d_limit = datetime.now() - timedelta(days)
 
         cnt = 0
         for u in premiums:
-            cnt += len(set([s.track.track_id for s in u.sessions if s.timestamp.now(UTC) >= d_limit]))
+            cnt += len(set([s.track.track_id for s in u.sessions if s.timestamp >= d_limit]))
 
         return cnt / len(premiums)
 
@@ -132,7 +133,7 @@ class StreamingPlatform:
             times[selector]["time"] += d
             times[selector]["cnt"] += 1
         ot = [(a, b["time"] / b["cnt"] if b["cnt"] != 0 else 0.0) for (a, b) in times.items()]
-        ot.sort(key=lambda a: a[1])
+        ot.sort(key=lambda a: a[1], reverse=True)
         return ot
 
     def total_listening_time_underage_sub_users_minutes(self, age_threshold: int = 18) -> float:
@@ -222,7 +223,8 @@ class StreamingPlatform:
         """
         listened_full_ids_per_user: dict[User, list[str]] = {
             user: [s.track.track_id for s in user.sessions if s.duration_listened_seconds == s.track.duration_seconds]
-            for user in self._users.values()}
+            for user in self._users.values()
+        }
         track_ids_per_album: dict[Album, list[str]] = {
             album:
                 [at.track_id for at in album.tracks]
@@ -231,11 +233,13 @@ class StreamingPlatform:
 
         output = []
         for (user, listened_full) in listened_full_ids_per_user.items():
+            if len(listened_full) == 0:
+                continue
             copy_listened = list(listened_full)
             albums = set()
             while len(copy_listened) > 0:
                 n = copy_listened.pop()
-                album = [k for k, v in track_ids_per_album if n in v][0]
+                album = [k for k, v in track_ids_per_album.items() if n in v][0]
                 albums.add(album.title)
             output.append((user, list(albums)))
         return output

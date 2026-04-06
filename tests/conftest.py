@@ -61,9 +61,26 @@ def platform() -> StreamingPlatform:
     # ------------------------------------------------------------------
     alice = FreeUser("u1", "Alice",   age=30)
     bob   = PremiumUser("u2", "Bob",   age=25, subscription_start=date(2023, 1, 1))
+    zeus = FamilyAccountUser("u3", "Zeus", age=21)
+    persephone  = FamilyMember("u4", "Persephone", age=16, parent=zeus)
 
-    for user in (alice, bob):
+    for user in (alice, bob, zeus, persephone):
         platform.add_user(user)
+
+    # ------------------------------------------------------------------
+    # Listening sessions
+    # ------------------------------------------------------------------
+    platform.record_session(ListeningSession("a1", alice, t1, FIXED_NOW, t1.duration_seconds))
+    platform.record_session(ListeningSession("a2", alice, t2, FIXED_NOW, t2.duration_seconds))
+
+    platform.record_session(ListeningSession("b1", bob, t1, FIXED_NOW, t1.duration_seconds))
+    platform.record_session(ListeningSession("b2", bob, t2, OLD, t1.duration_seconds))
+    platform.record_session(ListeningSession("b3", bob, t3, FIXED_NOW, t2.duration_seconds))
+
+    platform.record_session(ListeningSession("z1", zeus, t1, FIXED_NOW, t1.duration_seconds-20))
+    platform.record_session(ListeningSession("z2", zeus, t1, FIXED_NOW, t1.duration_seconds))
+
+    platform.record_session(ListeningSession("p1", persephone, t2, FIXED_NOW, t2.duration_seconds-30))
 
 
     return platform
