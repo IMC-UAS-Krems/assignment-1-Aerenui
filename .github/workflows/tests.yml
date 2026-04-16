@@ -25,8 +25,9 @@ jobs:
     - name: Run tests
       run: pytest --junit-xml=results.xml
 
-    - uses: dariocurr/pytest-summary@main
+    - uses: dorny/test-reporter@v1
       if: always()
       with:
-        show: all
-        paths: results.xml
+        name: Pytest Results
+        path: results.xml
+        reporter: java-junit
