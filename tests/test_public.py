@@ -112,20 +112,7 @@ class TestTrackMostDistinctListeners:
         assert p.track_with_most_distinct_listeners() is None
 
     def test_correct_track(self, platform: StreamingPlatform) -> None:
-        u = platform.get_user("u2")
-        t = platform.get_track("t1")
-
-        platform.record_session(ListeningSession("s1", u, t, FIXED_NOW, t.duration_seconds))
-        platform.record_session(ListeningSession("s2", u, t, FIXED_NOW, t.duration_seconds))
-
-        t2 = platform.get_track("t2")
-        platform.record_session(ListeningSession("s3", u, t2, FIXED_NOW, t2.duration_seconds))
-
-        platform.add_user(PremiumUser("u3", "John", age=14, subscription_start=date(2024, 6, 5)))
-        u2 = platform.get_user("u3")
-        platform.record_session(ListeningSession("s4", u2, t, FIXED_NOW, t.duration_seconds))
-
-        assert platform.track_with_most_distinct_listeners() == t  # 2 users from (3 sessions)
+        assert platform.track_with_most_distinct_listeners() == platform.get_track("t1")  # 2 users from (3 sessions)
 
 
 # ===========================================================================
@@ -193,10 +180,10 @@ class TestUnderageSubUserListening:
         assert p.total_listening_time_underage_sub_users_minutes() == 0.0
 
     def test_correct_value_default_threshold(self, platform: StreamingPlatform) -> None:
-        assert platform.total_listening_time_underage_sub_users_minutes() == 0.0
+        assert platform.total_listening_time_underage_sub_users_minutes() == 3.0
 
     def test_custom_threshold(self, platform: StreamingPlatform) -> None:
-        assert True == False
+        assert platform.total_listening_time_underage_sub_users_minutes(age_threshold=10) == 0.0
 
 
 # ===========================================================================
@@ -233,9 +220,8 @@ class TestTopArtistsByListeningTime:
         result = platform.top_artists_by_listening_time(n=2)
         assert len(result) <= 2
 
-    # TODO: Add a test that verifies the correct artists and values.
     def test_top_artist(self, platform: StreamingPlatform) -> None:
-        assert True == False
+        assert platform.top_artists_by_listening_time() == [(platform.get_artist("a1"), 24.0+2/3), (platform.get_artist("a2"), 0.0)]
 
 
 # ===========================================================================
@@ -269,9 +255,9 @@ class TestUserTopGenre:
                 _, pct = result
                 assert 0.0 <= pct <= 100.0
 
-    # TODO: Add a test that verifies the correct genre and percentage for a known user.
+    # test that verifies the correct genre and percentage for a known user
     def test_correct_top_genre(self, platform: StreamingPlatform) -> None:
-        assert True == False
+        assert platform.user_top_genre("u2") == ("pop", 2)
 
 
 # ===========================================================================
@@ -303,10 +289,15 @@ class TestCollaborativePlaylistsManyArtists:
         result = platform.collaborative_playlists_with_many_artists(threshold=100)
         assert result == []
 
-    # TODO: Add tests that verify the correct playlists are returned with
+    # tests that verify the correct playlists are returned with
     #       different threshold values.
     def test_default_threshold(self, platform: StreamingPlatform) -> None:
-        assert True == False
+        result = platform.collaborative_playlists_with_many_artists()
+        assert result == [platform._playlists.get("AS")]
+
+    def test_minimal_threshold(self, platform: StreamingPlatform) -> None:
+        result = platform.collaborative_playlists_with_many_artists(threshold=1)
+        assert result == [platform._playlists.get("KM"), platform._playlists.get("AS")]
 
 
 # ===========================================================================
@@ -332,12 +323,12 @@ class TestAvgTracksPerPlaylistType:
         assert "Playlist" in result
         assert "CollaborativePlaylist" in result
 
-    # TODO: Add tests that verify the correct averages for each playlist type.
+    # tests that verify the correct averages for each playlist type
     def test_standard_playlist_average(self, platform: StreamingPlatform) -> None:
-        assert True == False
+        assert platform.avg_tracks_per_playlist_type()["Playlist"] == 1.5
 
     def test_collaborative_playlist_average(self, platform: StreamingPlatform) -> None:
-        assert True == False
+        assert platform.avg_tracks_per_playlist_type()["CollaborativePlaylist"] == 1.0
 
 
 # ===========================================================================
@@ -371,12 +362,11 @@ class TestUsersWhoCompletedAlbums:
 
     def test_correct_users_identified(self, platform: StreamingPlatform) -> None:
         users = sorted([user.name for user, albums in platform.users_who_completed_albums()])
-        assert users == ["Alice", "Bob", "Zeus"]
+        assert users == ["Alice", "Bob"]
 
     def test_correct_album_titles(self, platform: StreamingPlatform) -> None:
         result = sorted([(user.name, albums) for user, albums in platform.users_who_completed_albums()])
         assert result == [
             ("Alice", ["Digital Dreams"]),
-            ("Bob", ["Digital Dreams"]),
-            ("Zeus", ["Digital Dreams"])
+            ("Bob", ["Digital Dreams", "Once upon a time"]),
         ]

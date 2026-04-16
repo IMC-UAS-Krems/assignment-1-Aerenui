@@ -9,8 +9,17 @@ Classes to implement:
 """
 from datetime import UTC, timedelta
 from datetime import datetime
-from streaming import *
+from typing import Dict
+
+from streaming.albums import Album
+# from streaming import *
+from streaming.tracks import *
 from streaming.users import *
+from streaming.artists import *
+from streaming.playlists import *
+from streaming.albums import *
+from streaming.sessions import *
+from streaming.users import FamilyAccountUser
 
 
 class StreamingPlatform:
@@ -30,7 +39,7 @@ class StreamingPlatform:
         self._catalogue = {}
         self._users = {}
         self._artists = {}
-        self._albums = {}
+        self._albums: dict[str, Album] = {}
         self._playlists = {}
         self._sessions = []
 
@@ -60,10 +69,10 @@ class StreamingPlatform:
         return self._users.get(user_id)
 
     def get_artist(self, artist_id) -> Artist | None:
-        self._artists.get(artist_id)
+        return self._artists.get(artist_id)
 
     def get_album(self, album_id) -> Album | None:
-        self._albums.get(album_id)
+        return self._albums.get(album_id)
 
     def all_users(self) -> list[User]:
         return list(self._users.values())
@@ -75,9 +84,6 @@ class StreamingPlatform:
         """
         Return the total cumulative listening time (in minutes) across all users for a given time period. Sum up the listening duration for all sessions that fall within the specified datetime window (inclusive on both ends).
         """
-        #start_time, end_time = start.now(UTC), end.now(UTC)
-        # assert [[s.duration_listened_seconds for s in u.sessions if start_time <= s.timestamp.now(UTC) <= end_time]
-        #      for u in self._users.values()] == 1
         return sum(
             [sum([s.duration_listened_seconds for s in u.sessions if start <= s.timestamp <= end])
              for u in self._users.values()]) / 60.0
@@ -102,18 +108,15 @@ class StreamingPlatform:
         """
         Return the track with the highest number of distinct listeners (not total plays) in the catalogue. Count the number of unique users who have listened to each track and return the one with the most. Return None if no sessions exist.
         """
-        counter = {}
+        counter: Dict[str, set[str]] = {}
         for s in self._sessions:
-            if not s.track.track_id in counter.keys():
-                counter[s.track.track_id] = 1
+            if not s.track.track_id in counter:
+                counter[s.track.track_id] = {s.user.user_id}
             else:
-                counter[s.track.track_id] += 1
-        tracks = list(counter.items())
-        tracks.sort(key=lambda a: a[0])
-        if len(tracks) == 0:
+                counter[s.track.track_id].add(s.user.user_id)
+        if not counter:
             return None
-
-        return self._catalogue.get(tracks[0][0])
+        return self._catalogue.get(max(counter, key=lambda a: len(a[1])))
 
     def avg_session_duration_by_user_type(self) -> list[tuple[str, float]]:
         """
@@ -157,7 +160,7 @@ class StreamingPlatform:
                 if isinstance(session.track, Song):
                     minutes.get(session.track.artist.artist_id)[0] += session.duration_listened_minutes()
 
-        return [(item[1], item[0]) for item in minutes.values()][:min(5, len(minutes))]
+        return sorted([(item[1], item[0]) for item in minutes.values()], key=lambda k: k[1], reverse=True)[:min(n, len(minutes))]
 
     def user_top_genre(self, user_id: str) -> tuple[str, float] | None:
         """
@@ -177,19 +180,19 @@ class StreamingPlatform:
             else:
                 counter[s.track.genre] = 1
 
-        return sorted(counter.items(), key=lambda a: a[1])[0]
+        return max(counter.items(), key=lambda a: a[1])
 
     def collaborative_playlists_with_many_artists(self, threshold: int = 3) -> list[CollaborativePlaylist]:
         """
         Return all CollaborativePlaylist instances that contain tracks from more than threshold (default 3) distinct artists. Only Song tracks count toward the artist count (exclude Podcast and AudiobookTrack which don't have artists). Return playlists in the order they were registered.
         """
         colabs: list[CollaborativePlaylist] = [playlist for playlist in self._playlists.values() if
-                                               isinstance(CollaborativePlaylist, playlist)]
+                                               isinstance(playlist, CollaborativePlaylist)]
         result = []
         for colab in colabs:
             if len(colab.contributors) <= threshold:
                 continue
-            if len([1 for track in colab.tracks if not isinstance(Song, track)]) > 0:
+            if len([1 for track in colab.tracks if not isinstance(track, Song)]) > 0:
                 continue
             result.append(colab)
         return result
@@ -210,7 +213,7 @@ class StreamingPlatform:
         }
         for playlist in self._playlists.values():
             key = "Playlist"
-            if isinstance(CollaborativePlaylist, playlist):
+            if isinstance(playlist, CollaborativePlaylist):
                 key = "CollaborativePlaylist"
             result[key]["val"] += len(playlist.tracks)
             result[key]["cnt"] += 1
@@ -221,25 +224,16 @@ class StreamingPlatform:
         """
         Identify users who have listened to every track on at least one complete Album and return the corresponding album titles. A user "completes" an album if their session history includes at least one listen to each track on that album. Return as a list of (User, [album_title, ...]) tuples in registration order. Albums with no tracks are ignored.
         """
-        listened_full_ids_per_user: dict[User, list[str]] = {
-            user: [s.track.track_id for s in user.sessions if s.duration_listened_seconds == s.track.duration_seconds]
-            for user in self._users.values()
-        }
-        track_ids_per_album: dict[Album, list[str]] = {
-            album:
-                [at.track_id for at in album.tracks]
-            for album in self._albums.values() if len(album.tracks) != 0
-        }
 
-        output = []
-        for (user, listened_full) in listened_full_ids_per_user.items():
-            if len(listened_full) == 0:
-                continue
-            copy_listened = list(listened_full)
-            albums = set()
-            while len(copy_listened) > 0:
-                n = copy_listened.pop()
-                album = [k for k, v in track_ids_per_album.items() if n in v][0]
-                albums.add(album.title)
-            output.append((user, list(albums)))
-        return output
+        albums: list[Album] = list(self._albums.values())
+        ot = []
+        for user in self._users.values():
+            listened_tracks = { s.track.track_id for s in user.sessions }
+            completed = []
+            for alb in albums:
+                if len(alb.track_ids().intersection(listened_tracks)) ==  len(alb.tracks):
+                    completed.append(alb.title)
+            if len(completed) > 0:
+                ot.append((user, completed))
+        return ot
+

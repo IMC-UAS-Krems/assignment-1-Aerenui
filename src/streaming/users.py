@@ -18,7 +18,6 @@ from streaming import ListeningSession
 
 
 class User:
-    sessions: list[ListeningSession]
 
     def __init__(self, user_id: str, name: str, age: int):
         """
@@ -27,7 +26,7 @@ class User:
         :type name: str
         :type age: int
         """
-        self.sessions = []
+        self.sessions: list[ListeningSession] = []
         self.age = age
         self.name = name
         self.user_id = user_id

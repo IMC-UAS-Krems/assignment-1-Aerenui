@@ -39,8 +39,11 @@ def platform() -> StreamingPlatform:
     # ------------------------------------------------------------------
     # Artists
     # ------------------------------------------------------------------
-    pixels  = Artist("a1", "Pixels",    genre="pop")
+    pixels  = Artist("a1", "Pixels", genre="pop")
+    wawes = Artist("a2", "Wawes", genre="medieval")
+
     platform.add_artist(pixels)
+    platform.add_artist(wawes)
 
     # ------------------------------------------------------------------
     # Albums & AlbumTracks
@@ -48,12 +51,21 @@ def platform() -> StreamingPlatform:
     dd = Album("alb1", "Digital Dreams", artist=pixels, release_year=2022)
     t1 = AlbumTrack("t1", "Pixel Rain",      180, "pop",  pixels, track_number=1)
     t2 = AlbumTrack("t2", "Grid Horizon",    210, "pop",  pixels, track_number=2)
-    t3 = AlbumTrack("t3", "Vector Fields",   195, "pop",  pixels, track_number=3)
-    for track in (t1, t2, t3):
+
+    dd2 = Album("alb2", "Once upon a time", artist=wawes, release_year=1251)
+    t3 = AlbumTrack("t3", "Morning sunrise",   195, "medieval",  pixels, track_number=3)
+
+    for track in (t1, t2):
         dd.add_track(track)
         platform.add_track(track)
         pixels.add_track(track)
+    for track in (t3,):
+        dd2.add_track(track)
+        platform.add_track(track)
+        wawes.add_track(track)
+
     platform.add_album(dd)
+    platform.add_album(dd2)
 
 
     # ------------------------------------------------------------------
@@ -63,7 +75,7 @@ def platform() -> StreamingPlatform:
     bob   = PremiumUser("u2", "Bob",   age=25, subscription_start=date(2023, 1, 1))
     zeus = FamilyAccountUser("u3", "Zeus", age=21)
     persephone  = FamilyMember("u4", "Persephone", age=16, parent=zeus)
-
+    zeus.add_sub_user(persephone)
     for user in (alice, bob, zeus, persephone):
         platform.add_user(user)
 
@@ -82,6 +94,29 @@ def platform() -> StreamingPlatform:
 
     platform.record_session(ListeningSession("p1", persephone, t2, FIXED_NOW, t2.duration_seconds-30))
 
+    # ------------------------------------------------------------------
+    # Playlists
+    # ------------------------------------------------------------------
+    pl1 = Playlist("WM", "Wierd Mix", persephone)
+    pl1.add_track(t2)
+    pl1.add_track(t3)
+    platform.add_playlist(pl1)
+
+    pl2 = Playlist("MN", "My only one", bob)
+    pl2.add_track(t3)
+    platform.add_playlist(pl2)
+
+    pl3 = CollaborativePlaylist("KM", "Known Songs", zeus)
+    pl3.add_track(t1)
+    pl3.add_contributor(alice)
+    platform.add_playlist(pl3)
+
+    pl4 = CollaborativePlaylist("AS", "All known Songs", zeus)
+    pl4.add_track(t1)
+    pl4.add_contributor(alice)
+    pl4.add_contributor(bob)
+    pl4.add_contributor(persephone)
+    platform.add_playlist(pl4)
 
     return platform
 
